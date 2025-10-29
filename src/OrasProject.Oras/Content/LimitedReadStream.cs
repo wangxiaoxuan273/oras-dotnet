@@ -24,7 +24,7 @@ namespace OrasProject.Oras.Content;
 /// </summary>
 /// <param name="inner">The underlying <see cref="Stream"/> to wrap and limit.</param>
 /// <param name="limit">The maximum number of bytes allowed to be read from the stream.</param>
-internal sealed class LimitedStream(Stream inner, long limit) : Stream
+internal sealed class LimitedReadStream(Stream inner, long limit) : Stream
 {
     private readonly Stream _inner = inner ?? throw new ArgumentNullException(nameof(inner));
     private readonly long _limit = limit >= 0 ? limit : throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be non-negative.");
@@ -63,7 +63,11 @@ internal sealed class LimitedStream(Stream inner, long limit) : Stream
         _inner.SetLength(value);
     }
 
-    public override void Write(byte[] buffer, int offset, int count) { }
+    public override void Write(byte[] buffer, int offset, int count) 
+        => throw new NotSupportedException("Write is not supported by LimitedReadStream");
+
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) 
+        => throw new NotSupportedException("Write is not supported by LimitedReadStream");
 
     public override int Read(byte[] buffer, int offset, int count)
     {
@@ -99,5 +103,11 @@ internal sealed class LimitedStream(Stream inner, long limit) : Stream
             _inner.Dispose();
         }
         base.Dispose(disposing);
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await _inner.DisposeAsync().ConfigureAwait(false);
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 }

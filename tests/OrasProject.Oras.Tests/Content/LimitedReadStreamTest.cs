@@ -21,14 +21,14 @@ using Xunit;
 
 namespace OrasProject.Oras.Tests.Content
 {
-    public class LimitedStreamTest
+    public class LimitedReadStreamTest
     {
         [Fact]
         public void Read_WithinLimit_Succeeds()
         {
             var data = Encoding.UTF8.GetBytes("foobar");
             using var inner = new MemoryStream(data);
-            using var limited = new LimitedStream(inner, 6);
+            using var limited = new LimitedReadStream(inner, 6);
 
             var buffer = new byte[6];
             int read = limited.Read(buffer, 0, buffer.Length);
@@ -42,7 +42,7 @@ namespace OrasProject.Oras.Tests.Content
         {
             var data = Encoding.UTF8.GetBytes("foobar");
             using var inner = new MemoryStream(data);
-            using var limited = new LimitedStream(inner, 6);
+            using var limited = new LimitedReadStream(inner, 6);
 
             var buffer = new byte[3];
             int read = limited.Read(buffer, 0, buffer.Length); // succeeds
@@ -64,7 +64,7 @@ namespace OrasProject.Oras.Tests.Content
         {
             var data = Encoding.UTF8.GetBytes("foobar");
             using var inner = new MemoryStream(data);
-            using var limited = new LimitedStream(inner, 6);
+            using var limited = new LimitedReadStream(inner, 6);
 
             var buffer = new byte[6];
             int read = await limited.ReadAsync(buffer);
@@ -78,7 +78,7 @@ namespace OrasProject.Oras.Tests.Content
         {
             var data = Encoding.UTF8.GetBytes("foobar");
             using var inner = new MemoryStream(data);
-            using var limited = new LimitedStream(inner, 6);
+            using var limited = new LimitedReadStream(inner, 6);
 
             var buffer = new byte[3];
             int read = await limited.ReadAsync(buffer); // succeeds
@@ -91,24 +91,19 @@ namespace OrasProject.Oras.Tests.Content
 
             await Assert.ThrowsAsync<SizeLimitExceededException>(async () =>
             {
-                int read = await limited.ReadAsync(buffer);
+                _ = await limited.ReadAsync(buffer);
             });
         }
 
         [Fact]
-        public void Write_PassesThrough()
+        public void Write_Throws_NotSupported()
         {
             using var inner = new MemoryStream();
-            using var limited = new LimitedStream(inner, 10);
+            using var limited = new LimitedReadStream(inner, 10);
 
+            Assert.False(limited.CanWrite);
             var buffer = Encoding.UTF8.GetBytes("abc");
-            limited.Write(buffer, 0, buffer.Length);
-
-            inner.Position = 0;
-            var readBuffer = new byte[3];
-            inner.Read(readBuffer, 0, 3);
-
-            Assert.Equal("abc", Encoding.UTF8.GetString(readBuffer));
+            Assert.Throws<NotSupportedException>(() => limited.Write(buffer, 0, buffer.Length));
         }
 
         [Fact]
@@ -116,7 +111,7 @@ namespace OrasProject.Oras.Tests.Content
         {
             var data = Encoding.UTF8.GetBytes("abcdef");
             using var inner = new MemoryStream(data);
-            using var limited = new LimitedStream(inner, 4);
+            using var limited = new LimitedReadStream(inner, 4);
 
             limited.Seek(2, SeekOrigin.Begin);
             var buffer = new byte[2];

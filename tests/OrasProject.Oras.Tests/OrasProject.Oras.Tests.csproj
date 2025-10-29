@@ -42,4 +42,8 @@ limitations under the License.
     <ProjectReference Include="..\..\src\OrasProject.Oras\OrasProject.Oras.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TestHelpers\" />
+  </ItemGroup>
+
 </Project>
